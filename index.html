@@ -106,19 +106,19 @@ button:active {
             return;
         }
 
-        // Clear existing drawing
+        // 기존 그림 지우기
         context.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Draw the Bezier curve
+        // n차 베지에 곡선 계산 및 그리기
         drawBezierCurve(context, points);
 
-        // Clear the points array
+        // 점 리스트 초기화
         points.length = 0;
     });
 
     document.getElementById('clearCanvas').addEventListener('click', () => {
         context.clearRect(0, 0, canvas.width, canvas.height);
-        points.length = 0; // Clear points array
+        points.length = 0; // 점 초기화
     });
 
     document.getElementById('saveImage').addEventListener('click', () => {
@@ -129,20 +129,18 @@ button:active {
     });
 
     document.getElementById('copyToClipboard').addEventListener('click', async () => {
-        // Create a temporary canvas to draw the background
         const tempCanvas = document.createElement('canvas');
         tempCanvas.width = canvas.width;
         tempCanvas.height = canvas.height;
         const tempContext = tempCanvas.getContext('2d');
 
-        // Fill the background with white
-        tempContext.fillStyle = '#ffffff';
+        // 배경을 흰색으로 설정
+        tempContext.fillStyle = 'white';
         tempContext.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
 
-        // Draw the existing canvas content onto the temporary canvas
+        // 원본 캔버스를 임시 캔버스로 복사
         tempContext.drawImage(canvas, 0, 0);
 
-        // Copy the content from the temporary canvas
         tempCanvas.toBlob(blob => {
             const item = new ClipboardItem({ "image/png": blob });
             navigator.clipboard.write([item]).then(() => {
@@ -152,5 +150,40 @@ button:active {
             });
         });
     });
+
+    function drawBezierCurve(context, points) {
+        const steps = 100; // 곡선을 그릴 샘플링 포인트 수
+        context.beginPath();
+        for (let t = 0; t <= 1; t += 1 / steps) {
+            const point = calculateBezierPoint(t, points);
+            if (t === 0) {
+                context.moveTo(point.x, point.y);
+            } else {
+                context.lineTo(point.x, point.y);
+            }
+        }
+        context.strokeStyle = 'black';
+        context.lineWidth = 2;
+        context.stroke();
+    }
+
+    function calculateBezierPoint(t, points) {
+        const n = points.length - 1;
+        let x = 0;
+        let y = 0;
+        for (let i = 0; i <= n; i++) {
+            const binomialCoefficient = factorial(n) / (factorial(i) * factorial(n - i));
+            const powT = Math.pow(t, i);
+            const powOneMinusT = Math.pow(1 - t, n - i);
+            x += binomialCoefficient * powT * powOneMinusT * points[i].x;
+            y += binomialCoefficient * powT * powOneMinusT * points[i].y;
+        }
+        return { x, y };
+    }
+
+    function factorial(num) {
+        if (num <= 1) return 1;
+        return num * factorial(num - 1);
+    }
 });
 </script></body>
